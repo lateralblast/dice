@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Name:         duit (Dell Update iDRAC Tool)
-# Version:      0.0.9
+# Version:      0.1.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -217,7 +217,6 @@ exit_idrac();
 
 sub process_firmware_dump {
   my @raw_firmware=read_file($firmware_dump_file);
-  my $counter; 
   my $record; 
   my $blade_no;
   my $start_processing=0; 
@@ -244,8 +243,7 @@ sub process_firmware_dump {
     print "<br />\n";
     print "|*Slot*|*Model*|*Hostname*|*Serial*|\n";
   }
-  for ($counter=0; $counter<@raw_firmware; $counter++) {
-    $record=$raw_firmware[$counter];
+  foreach $record (@raw_firmware) {
     chomp($record);
     $record=~s/\s+\(/ \(/g;
     if (($record=~/^Switch/)&&($record=~/:|Not Installed/)) {
@@ -529,93 +527,92 @@ sub populate_cfg_array {
   my $email_list;
   my $root_id;
   # Set NTP Servers
-  $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogServer1 $syslog_server_1"; $counter++;
-  $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogServer2 $syslog_server_2"; $counter++;
-  $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogEnable 1"; $counter++;
+  push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogServer1 $syslog_server_1");
+  push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogServer2 $syslog_server_2");
+  push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSyslogEnable 1");
   #
   ($blade_test,$root_id)=determine_if_blade();
   if ($blade_test eq 1) {
     # Set Time Zone
     # Enable webserver 
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRacTuning -o cfgRacTuneWebserverEnable 1"; $counter++;
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRacTuning -o cfgRacTuneWebserverEnable 1");
     # Enable SSH, Disable Telnet
-    #$cfg_array[$counter]="$console_prompt,racadm config -g cfgSerial -o cfgSerialConsoleEnable 1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgSerial -o cfgSerialSshEnable 1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgSerial -o cfgSerialTelnetEnable 0"; $counter++;
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialConsoleEnable 1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialSshEnable 1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialTelnetEnable 0");
     # Enable and setup alert email 
-    $cfg_array[$counter]="$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailAddress -i $root_id $email_list"; $counter++;
-    $cfg_array[$counter]="$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailEnable -i $root_id 1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSmtpServerIpAddr $smtp_server"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgEmailAlert -o cfgEmailAlertEnable -i $root_id 1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRacVirtual -o cfgVirMediaAttached 1 "; $counter++;
+    push(@cfg_array,"$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailAddress -i $root_id $email_list");
+    push(@cfg_array,"$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailEnable -i $root_id 1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSmtpServerIpAddr $smtp_server");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgEmailAlert -o cfgEmailAlertEnable -i $root_id 1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRacVirtual -o cfgVirMediaAttached 1 ");
     # Setup DHCP
-    #$cfg_array[$counter]="$console_prompt,racadm config -g cfgLanNetworking -o cfgNicEnable 1"; $counter++;
-    #$cfg_array[$counter]="$console_prompt,racadm config -g cfgLanNetworking -o cfgDNSServersFromDHCP 1"; $counter++;
-    #$cfg_array[$counter]="$console_prompt,racadm config -g cfgLanNetworking -o cfgDNSDomainNameFromDHCP 1"; $counter++;
-    #$cfg_array[$counter]="$,"; $counter++;
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgLanNetworking -o cfgNicEnable 1");
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgLanNetworking -o cfgDNSServersFromDHCP 1");
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgLanNetworking -o cfgDNSDomainNameFromDHCP 1");
+    #push(@cfg_array,"$,");
   }
   else {
     # If not a rackmount or blade add the following racadm commands to list
     if ($option{'m'}!~/r[0-9][1-9]|m[0-9][1-9]/) {
-      $cfg_array[$counter]="$console_prompt,setchassisname $option{'i'}"; $counter++;
+      push(@cfg_array,"$console_prompt,setchassisname $option{'i'}");
       if ($option{'X'}) {
         # Set Flex Addressing on Blade Chassis
-        $cfg_array[$counter]="$console_prompt,setflexaddr -f A 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -f B 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -f C 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -f iDRAC 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 1 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 2 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 3 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 4 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 5 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 6 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 7 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 8 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 9 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 10 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 11 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 12 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 13 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 14 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 15 1"; $counter++;
-        $cfg_array[$counter]="$console_prompt,setflexaddr -i 16 1"; $counter++;
+        push(@cfg_array,"$console_prompt,setflexaddr -f A 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -f B 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -f C 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -f iDRAC 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 1 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 2 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 3 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 4 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 5 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 6 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 7 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 8 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 9 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 10 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 11 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 12 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 13 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 14 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 15 1");
+        push(@cfg_array,"$console_prompt,setflexaddr -i 16 1");
       }
-      $cfg_array[$counter]="$console_prompt,racadm setractime -z $time_zone"; $counter++;
-      #$cfg_array[$counter]="$console_prompt,racadm config -g cfgNetTuning -o cfgNetTuningNicAutone 1"; $counter++;
-      $cfg_array[$counter]="$console_prompt,racadm config -g cfgAlerting -o cfgAlertingEnable 1"; $counter++;
-      $cfg_array[$counter]="$console_prompt,racadm config -g cfgAlerting -o cfgAlertingSourceEmailName cmc\@$option{'i'}"; $counter++;
-      $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSmtpServerIpAddr $smtp_server"; $counter++;
+      push(@cfg_array="$console_prompt,racadm setractime -z $time_zone");
+      #push(@cfg_array,"$console_prompt,racadm config -g cfgNetTuning -o cfgNetTuningNicAutone 1");
+      push(@cfg_array,"$console_prompt,racadm config -g cfgAlerting -o cfgAlertingEnable 1");
+      push(@cfg_array,"$console_prompt,racadm config -g cfgAlerting -o cfgAlertingSourceEmailName cmc\@$option{'i'}");
+      push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSmtpServerIpAddr $smtp_server");
     }
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpServer1 $dns_server_1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpServer2 $dns_server_2"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpEnable 1"; $counter++;
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpServer1 $dns_server_1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpServer2 $dns_server_2");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsNtpEnable 1");
   }
   # If a rackmount or blade add the following racadm commands to list
   if ($option{'m'}=~/r[0-9][1-9]|m[0-9][1-9]/) {
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgIpmiLan -o cfgIpmiLanEnable 1"; $counter++;
-    $cfg_array[$counter]="$console_prompt,racadm config -g cfgIpmiLan -o cfgIpmiLanAlertEnable 1"; $counter++;
+    push(@cfg_array,"$console_prompt,racadm config -g cfgIpmiLan -o cfgIpmiLanEnable 1");
+    push(@cfg_array,"$console_prompt,racadm config -g cfgIpmiLan -o cfgIpmiLanAlertEnable 1");
     # Enabling SSH over Serial
-    #$cfg_array[$counter]="$console_prompt,"; $counter++;
-#   $cfg_array[$counter]="$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialConsoleEnable 1"; $counter++;
-#   $cfg_array[$counter]="$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialBaudRate 115200"; $counter++;
-#   $cfg_array[$counter]="$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialSshEnable 1"; $counter++;
+    #push(@cfg_array,"$console_prompt,");
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialConsoleEnable 1");
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialBaudRate 115200");
+    #push(@cfg_array,"$console_prompt,racadm config -g cfgIpmiSerial -o cfgIpmiSerialSshEnable 1");
   }
   # components common to all
   if (($option{'i'}=~/28/)&&($option{'m'}!~/m[0-9][1-9]/)) {
-    $cfg_array[$counter]="$console_prompt,racadm setsysinfo -c chassislocation \"Building 28\""; $counter++;
+    push(@cfg_array,"$console_prompt,racadm setsysinfo -c chassislocation \"Building 28\"");
   }
   if ($option{'i'}=~/224/) {
-    $cfg_array[$counter]="$console_prompt,racadm setsysinfo -c chassislocation \"Building 224\""; $counter++;
+    push(@cfg_array,"$console_prompt,racadm setsysinfo -c chassislocation \"Building 224\"");
   }
-  $cfg_array[$counter]="$console_prompt,racadm config -g cfgEmailAlert -o cfgEmailAlertAddress -i $root_id $email_list"; $counter++;
+  push(@cfg_array,"$console_prompt,racadm config -g cfgEmailAlert -o cfgEmailAlertAddress -i $root_id $email_list");
   return;
 }
 
 # Configure iDRAC with custom settings
 
 sub configure_idrac {
-  my $counter; 
   my $record; 
   my $match; 
   my $response; 
@@ -625,8 +622,7 @@ sub configure_idrac {
   }
   $ssh_session->clear_accum();
   populate_cfg_array();
-  for ($counter=0; $counter < @cfg_array; $counter++) {
-    $record=$cfg_array[$counter];
+  foreach $record (@cfg_array) {
     ($match,$response)=split(',',$record);
     if ($option{'V'}||$option{'t'}) {
       print "$response\n";
