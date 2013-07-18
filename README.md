@@ -3,6 +3,8 @@ duit
 
 Dell Update iDRAC Tool
 
+A tool written in Perl that uses the Expect module to automate iDRAC configuration.
+
 Usage
 =====
 
