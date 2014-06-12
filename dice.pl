@@ -1,9 +1,10 @@
 #!/usr/bin/env perl
 
-# Name:         duit (Dell Update iDRAC Tool)
-# Version:      0.1.0
+# Name:         dice (Dell iDRAC Configure Environment)
+# Version:      0.1.1
 # Release:      1
-# License:      Open Source
+# License:      CC-BA (Creative Commons By Attrbution)
+#               http://creativecommons.org/licenses/by/4.0/legalcode
 # Group:        System
 # Source:       N/A
 # URL:          http://lateralblast.com.au/
@@ -22,7 +23,7 @@ use File::Basename;
 # Set up some host configuration variables
 
 my $time_zone="Australia/Melbourne";
-my $syslog_server_1="XXX.XXX.XXX.XXX"; 
+my $syslog_server_1="XXX.XXX.XXX.XXX";
 my $syslog_server_2="XXX.XXX.XXX.XXX";
 my $dns_server_1="XXX.XXX.XXX.XXX";
 my $dns_server_2="XXX.XXX.XXX.XXX";
@@ -31,17 +32,17 @@ my $console_prompt="";
 
 # General setup
 
-my $script_file=$0; 
+my $script_file=$0;
 my $ssh_session;
-my @standard_input; 
-my %option; 
+my @standard_input;
+my %option;
 my @command_line;
 my $verbose;
-my @cfg_array; 
-my @firmware_array; 
+my @cfg_array;
+my @firmware_array;
 my $email_list="blah\@blah.com";
-my $pause=8; 
-my $os_vers=`uname -a`; 
+my $pause=8;
+my $os_vers=`uname -a`;
 my $temp_dir;
 my $firmware_dump_file;
 my $script_info;
@@ -143,18 +144,18 @@ sub print_version {
 
 sub print_usage {
   print_version();
-  print "Usage: $script_name -m model -i hostname -p password -[n,e,f,g]\n"; 
+  print "Usage: $script_name -m model -i hostname -p password -[n,e,f,g]\n";
   print "\n";
-  print "-n Change Default password\n";
-  print "-e Enable custom settings\n";
-  print "-g Check firmware version\n";
-  print "-f Update firmware if required\n";
-  print "-a Perform all steps\n"; 
-  print "-t Run in test mode (don't do firmware update)\n";
-  print "-F Print firmware information\n"; 
-  print "-X Enable Flex Address (this will reset hardware)\n";
-  print "-D Dump firmware to file (hostname_fw_dump)\n";
-  print "-T Dump firmware to file (hostname_fw_dump) and print in Twiki format\n";
+  print "-n:  Change Default password\n";
+  print "-e:  Enable custom settings\n";
+  print "-g:  Check firmware version\n";
+  print "-f:  Update firmware if required\n";
+  print "-a:  Perform all steps\n";
+  print "-t:  Run in test mode (don't do firmware update)\n";
+  print "-F:  Print firmware information\n";
+  print "-X:  Enable Flex Address (this will reset hardware)\n";
+  print "-D:  Dump firmware to file (hostname_fw_dump)\n";
+  print "-T:  Dump firmware to file (hostname_fw_dump) and print in Twiki format\n";
   print "\n";
   return;
 }
@@ -217,24 +218,24 @@ exit_idrac();
 
 sub process_firmware_dump {
   my @raw_firmware=read_file($firmware_dump_file);
-  my $record; 
+  my $record;
   my $blade_no;
-  my $start_processing=0; 
+  my $start_processing=0;
   my $chassis;
-  my $component; 
-  my $version; 
+  my $component;
+  my $version;
   my $install_date;
-  my $header; 
-  my $model_no; 
+  my $header;
+  my $model_no;
   my $idrac_no;
-  my @hostnames; 
-  my $hostname; 
+  my @hostnames;
+  my $hostname;
   my @serials;
-  my $serial_no; 
-  my $presence; 
+  my $serial_no;
+  my $presence;
   my $power;
-  my $health; 
-  my $svctag; 
+  my $health;
+  my $svctag;
   my $fabric_no;
   my $extension;
   if ($option{'T'}) {
@@ -378,7 +379,7 @@ sub process_firmware_dump {
 # Dump firmware information from racadm
 
 sub dump_firmware {
-  my $output; 
+  my $output;
   my @firmware_dump;
   my $counter;
   if ($option{'m'}=~/m1000e/) {
@@ -397,7 +398,7 @@ sub dump_firmware {
 # Work out which model we are running on
 
 sub determine_hardware {
-  my $output; 
+  my $output;
   my @output_array;
   $ssh_session->send("racadm getsysinfo\n");
   $output=$ssh_session->expect($pause,'-re','System Model');
@@ -417,7 +418,7 @@ sub determine_hardware {
 sub initiate_ssh_session {
   my $result=do_known_host_check();
   my $output;
-  if ($option{'D'}) { 
+  if ($option{'D'}) {
     $firmware_dump_file="$option{'i'}_fw_dump";
     if (-e "$firmware_dump_file") {
       system("rm $firmware_dump_file");
@@ -452,16 +453,16 @@ sub initiate_ssh_session {
     $console_prompt="/admin1-> ";
   }
   return;
-} 
+}
 
 sub do_known_host_check {
-  my $result=0; 
+  my $result=0;
   my $host_test;
-  my $home_dir; 
-  my $host_file; 
+  my $home_dir;
+  my $host_file;
   $home_dir=`echo \$HOME`;
   chomp($home_dir);
-  $host_file="$home_dir/.ssh/known_hosts";  
+  $host_file="$home_dir/.ssh/known_hosts";
   $host_test=`cat $host_file |grep -i '$option{'i'}'`;
   chomp($host_test);
   if ($host_test=~/$option{'i'}/) {
@@ -469,7 +470,7 @@ sub do_known_host_check {
   }
   return($result);
 }
-  
+
 sub exit_idrac {
   my $output;
   $output=$ssh_session->expect($pause,'-re',$console_prompt);
@@ -481,7 +482,7 @@ sub exit_idrac {
 # Test to see if it's a blade/server or a chassis and change root_id
 
 sub determine_if_blade {
-  my $blade_test=0; 
+  my $blade_test=0;
   my $root_id;
   $ssh_session->send("getchassisname\n");
   $blade_test=$ssh_session->expect($pause,'-re','Invalid command|COMMAND NOT RECOGNIZED');
@@ -505,13 +506,13 @@ sub determine_if_blade {
 # Change iDRAC password
 
 sub change_idrac_password {
-  my $counter; 
-  my $record; 
-  my $match; 
-  my $response; 
-  my $output; 
+  my $counter;
+  my $record;
+  my $match;
+  my $response;
+  my $output;
   my $blade_test=1;
-  my $racadm_command; 
+  my $racadm_command;
   my $root_id;
   ($blade_test,$root_id)=determine_if_blade();
   $racadm_command="racadm config -g cfgUserAdmin -o cfgUserAdminPassword -i $root_id $option{'p'}";
@@ -519,11 +520,11 @@ sub change_idrac_password {
   return;
 }
 
-# Populate array of commands to send to Expect 
+# Populate array of commands to send to Expect
 
 sub populate_cfg_array {
-  my $counter=0; 
-  my $blade_test=0; 
+  my $counter=0;
+  my $blade_test=0;
   my $email_list;
   my $root_id;
   # Set NTP Servers
@@ -534,13 +535,13 @@ sub populate_cfg_array {
   ($blade_test,$root_id)=determine_if_blade();
   if ($blade_test eq 1) {
     # Set Time Zone
-    # Enable webserver 
+    # Enable webserver
     push(@cfg_array,"$console_prompt,racadm config -g cfgRacTuning -o cfgRacTuneWebserverEnable 1");
     # Enable SSH, Disable Telnet
     #push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialConsoleEnable 1");
     push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialSshEnable 1");
     push(@cfg_array,"$console_prompt,racadm config -g cfgSerial -o cfgSerialTelnetEnable 0");
-    # Enable and setup alert email 
+    # Enable and setup alert email
     push(@cfg_array,"$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailAddress -i $root_id $email_list");
     push(@cfg_array,"$,racadm config -g cfgUserAdmin -o cfgUserAdminEmailEnable -i $root_id 1");
     push(@cfg_array,"$console_prompt,racadm config -g cfgRemoteHosts -o cfgRhostsSmtpServerIpAddr $smtp_server");
@@ -613,9 +614,9 @@ sub populate_cfg_array {
 # Configure iDRAC with custom settings
 
 sub configure_idrac {
-  my $record; 
-  my $match; 
-  my $response; 
+  my $record;
+  my $match;
+  my $response;
   my $output;
   if ($option{'V'}||$option{'t'}) {
     print "Sending the following commands:\n";
