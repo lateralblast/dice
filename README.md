@@ -1,4 +1,4 @@
-![alt tag](https://raw.githubusercontent.com/lateralblast/dice/master/dice.jpg)
+![alt tag](https://raw.githubusercontent.com/lateralblast/dice/master/dice.png)
 
 DICE
 ====
