@@ -6,7 +6,26 @@ Dell iDRAC Configure Environment
 
 ## Introduction
 
-A tool written in Perl that uses the Expect module to automate iDRAC configuration.
+A tool written in Perl that uses the Expect module to log into Dell iDRACs and
+CMCs over SSH and automate their configuration with `racadm`.
+
+## Requirements
+
+The Perl module Expect is required (see `cpanfile`). Everything else used is
+part of core Perl.
+
+If Expect is missing, it is installed automatically into `~/perl5` the first
+time the script runs. To install it manually:
+
+```
+$ cpanm --installdeps .
+```
+
+## Configuration
+
+Site-specific settings (syslog, NTP and SMTP servers, time zone and email
+address) are in the `%config` hash at the top of `dice.pl`. They are set to
+placeholders and need to be edited before use.
 
 ## Usage
 
@@ -29,19 +48,27 @@ $ dice.pl -m model -i hostname -p password -[n,e,f,g]
 -h:  Print help
 ```
 
-Site-specific settings (syslog, DNS, NTP, SMTP, time zone and email address) are set
-at the top of `dice.pl` and need to be edited before use.
+The script connects to `hostname-mgt` as root. With `-n` or `-a` it logs in with
+the factory default password and sets the password given with `-p`.
 
-## Requirements
+### Examples
 
-The Perl module Expect is required (see `cpanfile`). Everything else used is
-part of core Perl.
-
-If it is missing it is installed automatically into `~/perl5` the first time the
-script runs. To install them manually:
+Show the configuration commands for a host without sending them:
 
 ```
-$ cpanm --installdeps .
+$ dice.pl -e -t -i myhost -p password
+```
+
+Apply the custom settings:
+
+```
+$ dice.pl -e -m r610 -i myhost -p password
+```
+
+Dump the firmware information from a chassis and print it in Twiki format:
+
+```
+$ dice.pl -T -m m1000e -i mychassis -p password
 ```
 
 ## License
@@ -52,6 +79,7 @@ Attribution-NonCommercial-ShareAlike 4.0 International). See the
 
 ## Help Support Development
 
-If you find this software useful and would like to support its development, please consider buying me a coffee:
+If you find this software useful and would like to support its development,
+please consider buying me a coffee:
 
 https://ko-fi.com/richardatlateralblast
